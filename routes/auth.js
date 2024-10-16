@@ -4,10 +4,12 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
+// const jsonify = require('mongoose-jsonify');
+const fetchuser = require('../middleware/fetchuser');
 
 const jwtSec = 'thisIsASecretString';
 
-//create a user using POST /api/auth/createuser ... no login required
+// ROUTE-1 : create a user using POST /api/auth/createuser ... no login required
 
 router.post('/createuser',[                               
 
@@ -46,7 +48,9 @@ router.post('/createuser',[
   })
 
   const data = {
-    user: user.id,
+    user: {
+      id: user.id
+    }
   }
 
   const authToken = jwt.sign(data,jwtSec);
@@ -60,7 +64,7 @@ router.post('/createuser',[
   }
 })
 
-//Authenticate a user using POST /api/auth/login ... no login required
+// ROUTE-2 : Authenticate a user using POST /api/auth/login ... no login required
 
 router.post('/login',[                               
 
@@ -89,7 +93,9 @@ router.post('/login',[
     }
 
     const data = {
-      user: user.id,
+      user: {
+        id: user.id
+      }
     }
   
     const authToken = jwt.sign(data,jwtSec);
@@ -101,4 +107,22 @@ router.post('/login',[
     }
 
 })
-module.exports = router;
+
+// ROUTE-3 : Get loggedin user details using - /api/auth/getuser ... login required
+router.post('/getuser',fetchuser,async (req,res)=>{
+    try {
+      let userId = req.user.id;
+      console.log(userId);
+      
+      const user = await User.findById(userId).select("-password");
+      res.send({user});
+      // res.send(jsonify(user));
+
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).send("Internal Server Error");
+    }
+
+
+})
+module.exports=router;
